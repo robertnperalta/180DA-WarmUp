@@ -2,6 +2,7 @@ from sys import stderr
 import cv2 as cv
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.cluster import KMeans
 from sys import argv
 
 def boundingBox(colorMin, colorMax, colorSpace="RGB"):
@@ -59,10 +60,54 @@ def boundingBox(colorMin, colorMax, colorSpace="RGB"):
 
     cv.destroyAllWindows()
 
+def dominantColor():
+    '''Uses K-means to find the dominant color of the middle 200x200 pixel
+    square of the webcam. Fills the square on the video with the dominant color.
+
+    Inspired heavily by https://code.likeagirl.io/finding-dominant-colour-on-an-image-b4e075f98097.
+    '''
+
+    cap = cv.VideoCapture(0)
+
+    while(1):
+        _, frame = cap.read()
+
+        # Slice out the middle 200x200 pixel square
+        halfSide = 100
+        midH = frame.shape[0]//2
+        midW = frame.shape[1]//2
+        topL = (midW-halfSide, midH-halfSide)
+        botR = (midW+halfSide, midH+halfSide)
+        square = frame[midH-halfSide:midH+halfSide,midW-halfSide:midW+halfSide,:]
+
+        # Reshape image to more easily cluster
+        reshaped = square.reshape((square.shape[0] * square.shape[1], 3))
+        km = KMeans(n_clusters=3)
+        km.fit(reshaped)
+
+        # Generate histogram for clusters
+        hist, _ = np.histogram(km.labels_, bins=3)
+        hist = hist.astype("float")
+        hist /= hist.sum()
+
+        # Get the dominant color according to the histogram
+        domColor = max(zip(hist, km.cluster_centers_), key=lambda x: x[0])[1]
+
+        # Put the filled rectangle on the frame and show the frame
+        cv.rectangle(frame, topL, botR, domColor, -1)
+        cv.imshow("dominant color", frame)
+
+        # Stop when ESC is pressed
+        k = cv.waitKey(5) & 0xFF
+        if k == 27:
+            break
+
+    cv.destroyAllWindows()
+
 if __name__ == "__main__":
-    validArgs = ["RGB", "HSV"]
+    validArgs = ["RGB", "HSV", "DOM"]
     if len(argv) != 2 or (argv[1].upper() not in validArgs):
-        print(f"Usage: {argv[0]} [RGB|HSV].", file=stderr)
+        print(f"Usage: {argv[0]} [RGB|HSV|DOM].", file=stderr)
         exit(1)
     
     colorMin = np.uint8([[[200, 150, 30]]])
@@ -74,3 +119,5 @@ if __name__ == "__main__":
         colorMin = np.uint8([h - 10, 150, 150])
         colorMax = np.uint8([h + 10, 255, 255])
         boundingBox(colorMin, colorMax, "HSV")
+    elif argv[1].upper() == "DOM":
+        dominantColor()
