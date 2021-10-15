@@ -1,2 +1,2 @@
 # 180DA-WarmUp
-Warmup repo for 180DA lab 1.
+Warmup repo for 180DA.
