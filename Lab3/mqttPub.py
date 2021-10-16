@@ -24,8 +24,23 @@ def main():
     client.connect_async("mqtt.eclipseprojects.io")
     client.loop_start()
 
-    for i in range(10):
-        client.publish("ece180d/test", random(), qos=1)
+    while True:
+        try:
+            key = input().lower()
+            if key == "w":
+                move = "FORWARD"
+            elif key == "a":
+                move = "LEFT"
+            elif key == "s":
+                move = "BACK"
+            elif key == "d":
+                move = "RIGHT"
+            else:
+                print("Invalid move")
+                continue
+            client.publish("ece180d/test", move, qos=1)
+        except KeyboardInterrupt:
+            break
 
     client.loop_stop()
     client.disconnect()

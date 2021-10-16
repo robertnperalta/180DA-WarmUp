@@ -24,11 +24,11 @@ def main():
     client.connect_async("mqtt.eclipseprojects.io")
     client.loop_start()
 
-    while True:
-        try:
+    try:
+        while True:
             pass
-        except KeyboardInterrupt:
-            break
+    except KeyboardInterrupt:
+        pass
 
     client.loop_stop()
     client.disconnect()
